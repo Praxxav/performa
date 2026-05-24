@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: "Satoshi";
+    font-weight: normal;
+    font-style: normal;
+    src: url("./assets/Fonts/Satoshi-Regular.otf") format("opentype");
+  }
+
+  @font-face {
+    font-family: "Clash-Display";
+    font-weight: normal;
+    font-style: normal;
+    src: url("./assets/Fonts/ClashDisplay-Variable.ttf") format("truetype");
+  }
+}
+
+body {
+  background-color: #f5f5f2;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.mobile-menu {
+  width: 100%;
+  height: 100%;
+  transform: translateX(100%);
+}
+
+.slide-in {
+  animation: slideIn 0.5s forwards ease-in-out;
+}
+
+.slide-out {
+  animation: slideOut 0.5s forwards ease-in-out;
+}
+
+@keyframes shake {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes move-up {
+  from {
+    transform: translateY(0.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-moveUp {
+  animation: move-up 0.3s ease-out;
+}
+
+/* Seamless scrolling animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-111.1%);
+  }
+}
+
+.animate-scroll {
+  display: flex;
+  animation: scroll 20s linear infinite;
+  white-space: nowrap;
+}
+
+.animate-scroll-reverse {
+  display: flex;
+  animation: scroll 20s linear infinite reverse;
+  white-space: nowrap;
+}
+
+.animate-scroll-reverse:hover {
+  animation-play-state: paused;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+.Toastify__toast-container {
+  width: auto;
+  margin: 0 auto;
+}
+
+.Toastify__close-button > svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.Toastify__toast {
+  width: 100%; /* Ensures each toast takes full width */
+  font-family: "Satoshi";
+}
+
+/* Hide increment/decrement arrows for Chrome, Safari, Edge, and Opera */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide increment/decrement arrows for Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Hide scrollbar by default (mobile) */
+.scrollbar-toggle {
+  overflow: auto;
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE/Edge */
+}
+
+.scrollbar-toggle::-webkit-scrollbar {
+  width: 0px;                    /* Chrome/Safari */
+  height: 0px;
+}
+
+/* Show scrollbar on medium and up */
+@media (min-width: 1024px) {
+  .scrollbar-toggle {
+    scrollbar-width: thin;       /* Firefox */
+    -ms-overflow-style: auto;    /* IE/Edge */
+  }
+
+  .scrollbar-toggle::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-toggle::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+  }
+
+  .scrollbar-toggle::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+
+
+.box {
+  box-shadow: 0 5px 0 0 rgb(0, 0, 0);
+}
+
+iframe[src*="accounts.google.com"] {
+  display: none !important;
+}
