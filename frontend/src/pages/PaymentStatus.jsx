@@ -6,7 +6,7 @@ import axios from 'axios';
 const API_URL =
     import.meta.env.MODE === "development" ?
         "http://localhost:3000/upgrade" :
-        "https://proforma-sohi.vercel.app/upgrade";
+        "/upgrade";
 
 axios.defaults.withCredentials = true;
 

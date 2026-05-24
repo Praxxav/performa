@@ -18,7 +18,10 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "http://localhost:5173", // Dev
-  "https://proforma-gen.vercel.app", // Prod
+  "http://proforma.bestypop.com:3003", // Prod with port
+  "http://proforma.bestypop.com", // Prod via proxy
+  "https://proforma.bestypop.com", // Prod HTTPS
+  "http://145.223.20.152:3003" // Prod IP fallback
 ];
 
 app.use(

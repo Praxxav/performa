@@ -17,7 +17,7 @@ import Verve from '../assets/Images/SVG Icons/verve-svgrepo-com.svg'
 const API_URL =
   import.meta.env.MODE === "development" ?
   "http://localhost:3000/upgrade" :
-  "https://proforma-sohi.vercel.app/upgrade";
+  "/upgrade";
 
 axios.defaults.withCredentials = true;
 

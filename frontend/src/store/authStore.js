@@ -7,7 +7,7 @@ import axios from "axios";
 const API_URL =
   import.meta.env.MODE === "development" ?
   "http://localhost:3000/api/auth" :
-  "https://proforma-sohi.vercel.app/api/auth";
+  "/api/auth";
 
 axios.defaults.withCredentials = true;
 

@@ -21,7 +21,7 @@ import { motion } from "framer-motion";
 const API_URL =
   import.meta.env.MODE === "development"
     ? "http://localhost:3000/settings"
-    : "https://proforma-sohi.vercel.app/settings";
+    : "/settings";
 
 axios.defaults.withCredentials = true;
 

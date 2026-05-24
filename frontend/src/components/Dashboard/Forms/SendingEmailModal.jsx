@@ -25,7 +25,7 @@ import { useInvoiceStore } from "../../../store/invoiceStore";
 const API_URL =
   import.meta.env.MODE === "development"
     ? "http://localhost:3000/api"
-    : "https://proforma-sohi.vercel.app/api";
+    : "/api";
 
 axios.defaults.withCredentials = true;
 

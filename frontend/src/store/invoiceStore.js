@@ -7,7 +7,7 @@ import axios from 'axios'
 const API_URL =
     import.meta.env.MODE === 'development' ?
     'http://localhost:3000/api/invoice' :
-    'https://proforma-sohi.vercel.app/api/invoice'
+    '/api/invoice'
 
 export const useInvoiceStore = create((set) => ({
     // state
