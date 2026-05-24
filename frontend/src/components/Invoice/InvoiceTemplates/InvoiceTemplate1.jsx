@@ -60,7 +60,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     cgst: 0,
     sgst: 0,
     igst: 0,
-    declaration: "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
+    termsOfService: "Terms and conditions apply.",
     tableHeaders: ["S.No", "Description of Goods", "HSN/SKU", "Qty", "Rate", "GST %", "Amount"],
   });
 
@@ -508,16 +508,16 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
         </div>
       </div>
 
-      {/* Footer / Declaration */}
+      {/* Footer / Terms of Services */}
       <div className="flex p-4 h-40">
         <div className="w-2/3 flex flex-col justify-end">
-          <div className="font-bold italic">Declaration:</div>
+          <div className="font-bold italic">Terms of Services:</div>
           <div
             contentEditable suppressContentEditableWarning={true}
             className="focus:outline-none hover:bg-gray-100 whitespace-pre-wrap text-sm max-w-sm"
-            onBlur={(e) => handleFieldChange("declaration", e.target.innerText)}
+            onBlur={(e) => handleFieldChange("termsOfService", e.target.innerText)}
           >
-            {invoiceData.declaration}
+            {invoiceData.termsOfService}
           </div>
         </div>
         <div className="w-1/3 flex flex-col items-center justify-end relative">
