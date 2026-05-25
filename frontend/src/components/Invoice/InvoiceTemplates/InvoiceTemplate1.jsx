@@ -3,14 +3,14 @@ import { FiX, FiUpload } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
 
-const convertNumberToWords = (amount) => {
+const convertNumberToWords = (amount, currencyName = "Rupees") => {
   const words = [
     "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
     "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"
   ];
   const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
 
-  if (!amount || amount === 0) return "Zero Rupees Only";
+  if (!amount || amount === 0) return `Zero ${currencyName} Only`;
 
   const numToWords = (n) => {
     if (n < 20) return words[n];
@@ -24,9 +24,10 @@ const convertNumberToWords = (amount) => {
   const rupees = Math.floor(amount);
   const paise = Math.round((amount - rupees) * 100);
 
-  let result = numToWords(rupees) + " Rupees";
+  let result = numToWords(rupees) + " " + currencyName;
   if (paise > 0) {
-    result += " and " + numToWords(paise) + " Paise";
+    const subunit = currencyName.toLowerCase() === "rupees" || currencyName.toLowerCase() === "inr" ? "Paise" : "Cents";
+    result += " and " + numToWords(paise) + " " + subunit;
   }
   return result + " Only";
 };
@@ -56,11 +57,19 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
         amount: 0.0,
       },
     ],
-    amountInWords: "Zero Rupees Only",
+    currencySymbol: "₹",
+    currencyName: "Rupees",
     cgst: 0,
     sgst: 0,
     igst: 0,
-    termsOfService: "Terms and conditions apply.",
+    bankDetails: {
+      accountName: "YOUR COMPANY NAME",
+      bankName: "HDFC Bank",
+      accountNumber: "XXXXXXXXXXXXX",
+      ifscCode: "HDFC000XXXX",
+      branch: "Chennai",
+    },
+    termsOfService: "1. This is a Proforma Invoice only and not a Tax Invoice.\n2. Goods/Services will be delivered after payment confirmation.\n3. Prices are inclusive/exclusive of GST as mentioned.\n4. Payment once made is non-refundable.\n5. Subject to Chennai Jurisdiction.",
     tableHeaders: ["S.No", "Description of Goods", "HSN/SKU", "Qty", "Rate", "GST %", "Amount"],
   });
 
@@ -135,6 +144,16 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     setInvoiceData({
       ...invoiceData,
       [field]: value,
+    });
+  };
+
+  const handleBankFieldChange = (field, value) => {
+    setInvoiceData({
+      ...invoiceData,
+      bankDetails: {
+        ...invoiceData.bankDetails,
+        [field]: value,
+      },
     });
   };
 
@@ -429,7 +448,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                 )}
               </td>
               <td className="p-2 align-top relative font-bold w-32">
-                ₹{item.amount.toFixed(2)}
+                {item.amount.toFixed(2)}
                 {!isStaticMode && (
                   <button
                     onClick={() => deleteItem(index)}
@@ -459,36 +478,103 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
 
       {/* Summary Section */}
       <div className="flex border-b-2 border-gray-800">
-        <div className="w-2/3 p-4 border-r-2 border-gray-800 flex flex-col justify-between">
+        <div className="w-2/3 p-4 border-r-2 border-gray-800 flex flex-col gap-6">
           <div>
-            <div className="font-bold mb-1">Amount in Words:</div>
-            <div
-              className="focus:outline-none whitespace-pre-wrap min-h-[3rem] text-gray-700"
-            >
-              {convertNumberToWords(calculateTotal())}
+            <div className="font-bold mb-1 flex items-center">
+              Amount in Words:
+              {!isStaticMode && (
+                <span className="ml-2 font-normal text-xs text-gray-500 flex items-center">
+                  (Currency:
+                  <input
+                    type="text"
+                    className="w-16 ml-1 border-b border-gray-400 focus:outline-none bg-transparent text-gray-700"
+                    value={invoiceData.currencyName}
+                    onChange={(e) => handleFieldChange("currencyName", e.target.value)}
+                    title="Edit Currency Name"
+                  />
+                  )
+                </span>
+              )}
+            </div>
+            <div className="focus:outline-none whitespace-pre-wrap min-h-[1.5rem] text-gray-700 font-semibold">
+              {convertNumberToWords(calculateTotal(), invoiceData.currencyName)}
+            </div>
+          </div>
+          
+          {/* Bank Details Section */}
+          <div>
+            <div className="font-bold mb-2">BANK DETAILS</div>
+            <div className="text-sm grid grid-cols-[120px_1fr] gap-y-1">
+              <div className="font-semibold">Account Name</div>
+              <div className="flex">
+                <span className="mr-2">:</span>
+                <div
+                  contentEditable suppressContentEditableWarning={true}
+                  className="focus:outline-none hover:bg-gray-100 flex-1 font-semibold"
+                  onBlur={(e) => handleBankFieldChange("accountName", e.target.innerText)}
+                >{invoiceData.bankDetails.accountName}</div>
+              </div>
+              <div className="font-semibold">Bank Name</div>
+              <div className="flex">
+                <span className="mr-2">:</span>
+                <div
+                  contentEditable suppressContentEditableWarning={true}
+                  className="focus:outline-none hover:bg-gray-100 flex-1"
+                  onBlur={(e) => handleBankFieldChange("bankName", e.target.innerText)}
+                >{invoiceData.bankDetails.bankName}</div>
+              </div>
+              <div className="font-semibold">Account No</div>
+              <div className="flex">
+                <span className="mr-2">:</span>
+                <div
+                  contentEditable suppressContentEditableWarning={true}
+                  className="focus:outline-none hover:bg-gray-100 flex-1"
+                  onBlur={(e) => handleBankFieldChange("accountNumber", e.target.innerText)}
+                >{invoiceData.bankDetails.accountNumber}</div>
+              </div>
+              <div className="font-semibold">IFSC Code</div>
+              <div className="flex">
+                <span className="mr-2">:</span>
+                <div
+                  contentEditable suppressContentEditableWarning={true}
+                  className="focus:outline-none hover:bg-gray-100 flex-1"
+                  onBlur={(e) => handleBankFieldChange("ifscCode", e.target.innerText)}
+                >{invoiceData.bankDetails.ifscCode}</div>
+              </div>
+              <div className="font-semibold">Branch</div>
+              <div className="flex">
+                <span className="mr-2">:</span>
+                <div
+                  contentEditable suppressContentEditableWarning={true}
+                  className="focus:outline-none hover:bg-gray-100 flex-1"
+                  onBlur={(e) => handleBankFieldChange("branch", e.target.innerText)}
+                >{invoiceData.bankDetails.branch}</div>
+              </div>
             </div>
           </div>
         </div>
         <div className="w-1/3">
           <div className="flex border-b border-gray-800">
             <div className="w-1/2 p-2 border-r border-gray-800 font-bold">Taxable Value</div>
-            <div className="w-1/2 p-2 text-center font-bold">₹{calculateSubTotal().toFixed(2)}</div>
+            <div className="w-1/2 p-2 text-center font-bold">
+              {calculateSubTotal().toFixed(2)}
+            </div>
           </div>
           <div className="flex border-b border-gray-800">
             <div className="w-1/2 p-2 border-r border-gray-800 font-bold">CGST</div>
             <div className="w-1/2 p-2 text-center">
-              ₹{calculateCGST().toFixed(2)}
+              {calculateCGST().toFixed(2)}
             </div>
           </div>
           <div className="flex border-b border-gray-800">
             <div className="w-1/2 p-2 border-r border-gray-800 font-bold">SGST</div>
             <div className="w-1/2 p-2 text-center">
-              ₹{calculateSGST().toFixed(2)}
+              {calculateSGST().toFixed(2)}
             </div>
           </div>
           <div className="flex border-b border-gray-800">
             <div className="w-1/2 p-2 border-r border-gray-800 font-bold">IGST</div>
-            <div className="w-1/2 p-2 text-center">
+            <div className="w-1/2 p-2 text-center flex justify-center items-center">
               {isStaticMode ? (
                 <span>{invoiceData.igst}</span>
               ) : (
@@ -503,31 +589,42 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
           </div>
           <div className="flex bg-gray-100">
             <div className="w-1/2 p-2 border-r border-gray-800 font-bold">Grand Total</div>
-            <div className="w-1/2 p-2 text-center font-bold">₹{calculateTotal().toFixed(2)}</div>
+            <div className="w-1/2 p-2 text-center font-bold flex justify-center items-center">
+              {isStaticMode ? <span>{invoiceData.currencySymbol}</span> : (
+                <input
+                  type="text"
+                  className="w-16 focus:outline-none bg-transparent text-right mr-1 text-gray-700"
+                  value={invoiceData.currencySymbol}
+                  onChange={(e) => handleFieldChange("currencySymbol", e.target.value)}
+                  title="Edit Currency Symbol"
+                />
+              )}
+              {calculateTotal().toFixed(2)}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Footer / Terms of Services */}
-      <div className="flex p-4 h-40">
+      <div className="flex p-4">
         <div className="w-2/3 flex flex-col justify-end">
-          <div className="font-bold italic">Terms of Services:</div>
+          <div className="font-bold mb-1">TERMS & CONDITIONS</div>
           <div
             contentEditable suppressContentEditableWarning={true}
-            className="focus:outline-none hover:bg-gray-100 whitespace-pre-wrap text-sm max-w-sm"
+            className="focus:outline-none hover:bg-gray-100 whitespace-pre-wrap text-sm max-w-sm font-semibold"
             onBlur={(e) => handleFieldChange("termsOfService", e.target.innerText)}
           >
             {invoiceData.termsOfService}
           </div>
         </div>
         <div className="w-1/3 flex flex-col items-center justify-end relative">
-          <div className="font-bold border-t border-gray-800 w-3/4 text-center pt-1 mt-12">
+          <div className="font-bold border-t border-gray-800 w-3/4 text-center pt-1 mt-24">
             Authorized Signatory
           </div>
         </div>
       </div>
       <div className="text-center italic pb-4 text-xs font-semibold">
-        This is a Computer Generated Invoice
+        This is a computer-generated Proforma Invoice and does not require a physical signature.
       </div>
     </div>
   );
