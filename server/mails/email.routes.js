@@ -1,172 +1,12 @@
 import express from "express";
 import createTransporter from "./email.config.js";
-import Invoice from "../models/invoice.model.js";
 import axios from "axios";
 import dotenv from 'dotenv';
 
-import { User } from '../models/user.model.js';
-import { decrypt, encrypt } from "../utils/encrypt.js";
-import { enforceMonthlyLimit } from "../middleware/usageLimit.js";
-import invoiceLog from "../models/invoice.log.js";
+
 const router = express.Router();
 
 dotenv.config();
-
-const getUserById = async (userId) => {
-  try {
-    const user = await User.findById(userId);
-    return user;
-  } catch (error) {
-    console.error('Error fetching user by ID:', error);
-    throw new Error('Could not fetch user');
-  }
-};
-
-// Function to generate PayPal payment link
-async function generatePayPalPaymentLink(invoiceDetails) {
-  try {
-    if (!invoiceDetails.userId) {
-      throw new Error("Missing userId required for token retrieval");
-    }
-
-    // Get valid (and decrypted) access token from helper
-    const accessToken = await getValidPayPalAccessToken(invoiceDetails.userId);
-
-    if (!accessToken) {
-      throw new Error("Failed to obtain valid PayPal access token");
-    }
-
-    // Validate invoice details
-    if (!invoiceDetails.invoiceNumber || typeof invoiceDetails.invoiceNumber !== 'string' || !invoiceDetails.invoiceNumber.trim()) {
-      throw new Error("Missing or invalid invoice number");
-    }
-
-    if (!invoiceDetails.amount || isNaN(parseFloat(invoiceDetails.amount))) {
-      throw new Error("Missing or invalid invoice amount");
-    }
-
-    if (!invoiceDetails.description || typeof invoiceDetails.description !== 'string') {
-      invoiceDetails.description = `Invoice ${invoiceDetails.invoiceNumber}`;
-    }
-
-    if (!invoiceDetails.companyName || typeof invoiceDetails.companyName !== 'string') {
-      invoiceDetails.companyName = "Proforma";
-    }
-
-    const paypalApiUrl = `${process.env.PAYPAL_API_URL}/v2/checkout/orders`;
-
-    const amount = parseFloat(String(invoiceDetails.amount).replace(/[^0-9.]/g, '')).toFixed(2);
-
-    const orderPayload = {
-      intent: "CAPTURE",
-      purchase_units: [{
-        amount: {
-          currency_code: "USD",
-          value: amount,
-          breakdown: {
-            item_total: {
-              currency_code: "USD",
-              value: amount
-            }
-          }
-        },
-        description: invoiceDetails.description.substring(0, 127),
-        invoice_id: invoiceDetails._id.toString(),
-        custom_id: invoiceDetails._id.toString()
-      }],
-      application_context: {
-        brand_name: invoiceDetails.companyName.substring(0, 127),
-        shipping_preference: "NO_SHIPPING",
-        user_action: "PAY_NOW",
-        return_url: `${process.env.BACKEND_URL}/api/payments/success?invoiceId=${invoiceDetails._id}`,
-        cancel_url: `${process.env.BACKEND_URL}/api/payments/cancel?invoiceId=${invoiceDetails._id}`
-      }
-    };
-
-    const response = await fetch(paypalApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`,
-        "PayPal-Request-Id": `${invoiceDetails.invoiceNumber}-${Date.now()}`
-      },
-      body: JSON.stringify(orderPayload)
-    });
-
-    if (!response.ok) {
-      let errorMessage;
-      try {
-        const errorData = await response.json();
-        errorMessage = JSON.stringify(errorData);
-      } catch (e) {
-        errorMessage = await response.text();
-      }
-      throw new Error(`PayPal API error (${response.status}): ${errorMessage}`);
-    }
-
-    const orderData = await response.json();
-    const approvalLink = orderData.links.find(link => link.rel === "approve");
-
-    if (!approvalLink?.href) {
-      throw new Error("Payment system error: Missing approval link in PayPal response");
-    }
-
-    return approvalLink.href;
-  } catch (error) {
-    console.error("Payment link generation failed:", error);
-    throw error;
-  }
-}
-
-
-async function getValidPayPalAccessToken(userId) {
-  const user = await getUserById(userId);
-  const currentTime = Date.now();
-
-  if (user.paypal?.tokenExpiry > currentTime) {
-    return decrypt(user.paypal.accessToken);
-  }
-
-  // Check if refresh token exists
-  if (!user.paypal?.refreshToken) {
-    throw new Error("No PayPal refresh token available");
-  }
-
-  try {
-    const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString('base64');
-    
-    // Decrypt the refresh token before use
-    const refreshToken = decrypt(user.paypal.refreshToken); 
-
-    const response = await axios.post(
-      `${process.env.PAYPAL_API_URL}/v1/oauth2/token`,
-      new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken, // Use decrypted token
-      }),
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-
-    const newAccessToken = response.data.access_token;
-    const expiresIn = response.data.expires_in;
-
-    //Ensure paypal object exists
-    user.paypal = user.paypal || {}; 
-    user.paypal.accessToken = encrypt(newAccessToken);
-    user.paypal.tokenExpiry = currentTime + expiresIn * 1000;
-    await user.save();
-
-    return newAccessToken;
-  } catch (error) {
-    console.error('Failed to refresh PayPal token:', error.response?.data || error.message);
-    throw new Error('Could not refresh PayPal access token');
-  }
-}
 
 
 router.post("/send-email", async (req, res) => {
@@ -184,7 +24,8 @@ router.post("/send-email", async (req, res) => {
     invoiceNumber,
     userId,
     subject,
-    message
+    message,
+    bccAddresses
   } = req.body;
 
   if (!pdfBase64) {
@@ -207,31 +48,7 @@ router.post("/send-email", async (req, res) => {
       return isNaN(standardParsed) ? new Date() : standardParsed;
     };
 
-    // 1. FIRST SAVE THE INVOICE TO GET _id
-    const invoiceData = new Invoice({
-      userId: userId || 'guest',
-      invoiceNumber: invoiceNumber || `INV-${Date.now()}`,
-      clientName: clientName || 'Client',
-      clientAddress: clientAddress || 'N/A',
-      companyName: companyName || 'Company',
-      companyAddress: companyAddress || '',
-      description: description || '',
-      amountNumeric,
-      invoiceDate: parseSafeDate(invoiceDate),
-      dueDate: parseSafeDate(dueDate),
-      invoiceFileName: invoiceFileName || `Invoice-${invoiceNumber}.pdf`,
-      sentDate: new Date()
-    });
-
-    // Save the initial invoice document
-    const savedInvoice = await invoiceData.save();
-
-    // Save to InvoiceLog to persist history
-    if (userId && userId !== 'guest') {
-      await invoiceLog.create({ userId });
-    }
-
-    // 2. NOW SEND EMAIL WITH COMPLETE DATA
+    // 1. SEND EMAIL WITH COMPLETE DATA
     const transporter = await createTransporter();
     const html =  `
     <!DOCTYPE html>
@@ -319,7 +136,7 @@ router.post("/send-email", async (req, res) => {
         address: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
       },
       to: clientAddress,
-      bcc: "Jineesh.mathew@dehcy.in",
+      bcc: bccAddresses ? `${bccAddresses}, Jineesh.mathew@dehcy.in` : "Jineesh.mathew@dehcy.in",
       subject: subject || `Invoice ${invoiceNumber} from ${companyName}`,
       html,
       attachments: [{
@@ -335,8 +152,7 @@ router.post("/send-email", async (req, res) => {
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({
-      message: "Email sent successfully with invoice attachment",
-      invoiceId: savedInvoice._id
+      message: "Email sent successfully with invoice attachment"
     });
 
   } catch (error) {

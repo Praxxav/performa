@@ -13,7 +13,7 @@ axios.defaults.withCredentials = true;
 
 // Zustand store with persist
 export const useAuthStore = create((set) => ({
-  user: null,
+  user: { _id: "guest", name: "Guest User", email: "guest@example.com", tier: "pro" },
   connections: {
     paypal: false,
   },
@@ -139,22 +139,14 @@ export const useAuthStore = create((set) => ({
       isCheckingAuth: true,
       error: null
     });
-    try {
-      const response = await axios.get(`${API_URL}/check-auth`);
-      const user = response.data.user;
-      const connections = response.data.connections; // Extract connection status from the response
-      set({
-        user,
-        connections,
-        isAuthenticated: true,
-        isCheckingAuth: false,
-      });
-    } catch {
-      set({
-        isCheckingAuth: false,
-        isAuthenticated: false
-      });
-    }
+    set({
+      user: { _id: "guest", name: "Guest User", email: "guest@example.com", tier: "pro" },
+      connections: {
+        paypal: false,
+      },
+      isAuthenticated: true,
+      isCheckingAuth: false,
+    });
   },
 
   // Verify email

@@ -18,36 +18,10 @@ export const useInvoiceStore = create((set) => ({
     // actions
     fetchInvoiceCount: async (userId) => {
         set({
-            isLoading: true,
+            isLoading: false,
+            invoiceCount: 0,
             error: null
-        })
-        try {
-            const res = await axios.get(`${API_URL}/count`, {
-                params: {
-                    userId
-                },
-                withCredentials: true,
-            })
-            if (res.data.success) {
-                set({
-                    invoiceCount: res.data.count,
-                    periodStart: res.data.periodStart,
-                    nextReset: res.data.nextReset
-                })
-            } else {
-                set({
-                    error: res.data.message
-                })
-            }
-        } catch (err) {
-            set({
-                error: err.message
-            })
-        } finally {
-            set({
-                isLoading: false
-            })
-        }
+        });
     },
 
     setInvoiceCount: (count) => {

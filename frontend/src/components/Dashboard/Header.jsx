@@ -4,7 +4,6 @@ import { Filter, CheckCircle } from "lucide-react";
 import Logo from "../../assets/Images/P-removebg-preview.png";
 // import { GoSearch } from "react-icons/go";
 import { CiBellOn } from "react-icons/ci";
-import AccountConnectionModal from "./Connections/AccountConnectionModal";
 import { useAuthStore } from "../../store/authStore";
 
 const Header = () => {

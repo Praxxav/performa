@@ -30,6 +30,8 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
 
   const [emailAddresses, setEmailAddresses] = useState([]);
   const [emailInput, setEmailInput] = useState("");
+  const [bccAddresses, setBccAddresses] = useState([]);
+  const [bccInput, setBccInput] = useState("");
   const [emailData, setEmailData] = useState({
     subject: "",
     message: "",
@@ -54,6 +56,23 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
 
   const handleRemoveEmail = (indexToRemove) => {
     setEmailAddresses(emailAddresses.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleBccKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const newEmail = bccInput.trim().replace(/,$/, '');
+      if (newEmail && !bccAddresses.includes(newEmail)) {
+        setBccAddresses([...bccAddresses, newEmail]);
+        setBccInput("");
+      } else if (newEmail) {
+        setBccInput("");
+      }
+    }
+  };
+
+  const handleRemoveBcc = (indexToRemove) => {
+    setBccAddresses(bccAddresses.filter((_, index) => index !== indexToRemove));
   };
 
   // Disable scrolling when modal is open
@@ -254,6 +273,13 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
          }
       }
 
+      const finalBccEmails = [...bccAddresses];
+      if (bccInput.trim()) {
+         if (!finalBccEmails.includes(bccInput.trim())) {
+            finalBccEmails.push(bccInput.trim());
+         }
+      }
+
       if (finalEmails.length === 0) {
          toast.error("At least one client email is required");
          setIsSending(false);
@@ -273,6 +299,7 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
           invoiceFileName: "invoice.pdf",
           ...invoiceData,
           clientAddress: finalEmails.join(', '),
+          bccAddresses: finalBccEmails.join(', '),
           subject: emailData.subject,
           message: emailData.message,
           invoiceNumber: emailData.invoiceNumber || invoiceData.invoiceNumber,
@@ -329,9 +356,13 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To (Client Emails)</label>
+            <div className="flex-1 flex flex-col gap-4 min-h-0">
+              <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-y-auto pr-2 pb-2">
+                
+                {/* Left Column */}
+                <div className="w-full lg:w-1/2 flex flex-col gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">To (Client Emails)</label>
                 <div 
                   className="w-full p-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-cyan-500 transition-all flex flex-wrap gap-2 items-center min-h-[48px] bg-white shadow-sm cursor-text"
                   onClick={() => document.getElementById('email-chip-input')?.focus()}
@@ -362,6 +393,37 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">BCC</label>
+                <div 
+                  className="w-full p-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-cyan-500 transition-all flex flex-wrap gap-2 items-center min-h-[48px] bg-white shadow-sm cursor-text"
+                  onClick={() => document.getElementById('bcc-chip-input')?.focus()}
+                >
+                  {bccAddresses.map((email, index) => (
+                    <span key={index} className="flex items-center gap-1.5 bg-cyan-50 border border-cyan-200 text-cyan-800 px-2.5 py-1 rounded text-sm font-medium transition-colors">
+                      {email}
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveBcc(index)} 
+                        className="text-cyan-600 hover:text-cyan-900 hover:bg-cyan-100 rounded-full w-4 h-4 flex items-center justify-center transition-colors focus:outline-none"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    id="bcc-chip-input"
+                    type="text"
+                    value={bccInput}
+                    onChange={(e) => setBccInput(e.target.value)}
+                    onKeyDown={handleBccKeyDown}
+                    className="flex-1 outline-none min-w-[150px] text-sm bg-transparent py-1 text-gray-800"
+                    placeholder="bcc@example.com"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Press Enter or comma to add multiple emails</p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                 <input
                   type="text"
@@ -373,7 +435,7 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Invoice No</label>
                   <input
@@ -419,19 +481,25 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
                   />
                 </div>
               </div>
+                </div>
 
-              <div className="flex-1 flex flex-col min-h-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea
-                  name="message"
-                  value={emailData.message}
-                  onChange={handleChange}
-                  className="flex-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all resize-none"
-                  placeholder="Enter your message..."
-                />
+                {/* Right Column */}
+                <div className="w-full lg:w-1/2 flex flex-col min-h-[250px] lg:min-h-0">
+                  <div className="flex-1 flex flex-col h-full">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <textarea
+                      name="message"
+                      value={emailData.message}
+                      onChange={handleChange}
+                      className="flex-1 w-full h-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all resize-none min-h-[150px] lg:min-h-0"
+                      placeholder="Enter your message..."
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="pt-2 flex justify-end gap-4 mt-auto">
+              {/* Action Buttons */}
+              <div className="pt-4 flex justify-end gap-4 mt-2 border-t border-gray-100">
                 <button
                   onClick={onClose}
                   className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"

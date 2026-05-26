@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import Sidebar from "../components/Dashboard/Sidebar";
 import Header from "../components/Dashboard/Header";
-import Overview from "./Overview";
 import Invoices from "./Invoices";
-import Clients from "./Clients";
-import Settings from "./Settings";
-import Payments from "./Payments";
-import MobileNavigation from "../components/Dashboard/MobileNavigation";
 
 const Dashboard = () => {
   const year = new Date().getFullYear();
@@ -74,9 +69,7 @@ const Dashboard = () => {
               <Routes>
                 <Route path="/" element={<Navigate to="invoices" replace />} />
                 <Route path="invoices" element={<Invoices />} />
-                <Route path="clients" element={<Clients />} />
-                {/* <Route path="payments" element={<Payments />} /> */}
-                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="invoices" replace />} />
               </Routes>
             </div>
             <div className="pr-[2vw] mb-[30vw] md:pb-[1vw] md:mb-0">
@@ -90,7 +83,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      {/* <MobileNavigation /> */}
     </div>
   );
 };
