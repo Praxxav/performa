@@ -8,17 +8,9 @@ import { createPortal } from "react-dom";
 import lottie from "lottie-web";
 import generatingAnimation from "../../../assets/animations/generating.json";
 import { FaCheck } from "react-icons/fa";
-import uploadingAnimation from "../../../assets/animations/uploading.json";
+
 import sendingAnimation from "../../../assets/animations/sending.json";
 import { useAuthStore } from "../../../store/authStore";
-import { GoShieldLock } from "react-icons/go";
-import { UsePaymentHandlers } from "../../../hooks/UsePaymentHandlers";
-import Paypal from "../../../assets/Images/Account Icons/PayPal_Logo_Icon_2014.svg";
-import flutter from "../../../assets/Images/Account Icons/full.svg";
-import stripe from "../../../assets/Images/Account Icons/Logotype (1).svg";
-import paystack from "../../../assets/Images/Account Icons/images (1).png";
-import skrill from "../../../assets/Images/Account Icons/Skrill.svg";
-import googlepay from "../../../assets/Images/Account Icons/GooglePay.svg";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useInvoiceStore } from "../../../store/invoiceStore";
 
@@ -33,69 +25,88 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
   const [isComplete, setIsComplete] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendStatus, setSendStatus] = useState("generating");
-  const { user, connections } = useAuthStore();
-  const [showModal, setShowModal] = useState(false);
-  const didSendRef = useRef(false);
-  const { handlers } = UsePaymentHandlers();
+  const { user } = useAuthStore();
   const { incrementInvoiceCount } = useInvoiceStore();
+
+  const [emailAddresses, setEmailAddresses] = useState([]);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailData, setEmailData] = useState({
+    subject: "",
+    message: "",
+    invoiceNumber: "",
+    invoiceDate: "",
+    dueDate: "",
+    invoiceAmount: ""
+  });
+
+  const handleEmailKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const newEmail = emailInput.trim().replace(/,$/, '');
+      if (newEmail && !emailAddresses.includes(newEmail)) {
+        setEmailAddresses([...emailAddresses, newEmail]);
+        setEmailInput("");
+      } else if (newEmail) {
+        setEmailInput("");
+      }
+    }
+  };
+
+  const handleRemoveEmail = (indexToRemove) => {
+    setEmailAddresses(emailAddresses.filter((_, index) => index !== indexToRemove));
+  };
 
   // Disable scrolling when modal is open
   useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
+    document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [showModal]);
+  }, []);
 
-  const paymentOptions = [
-    {
-      name: "PayPal",
-      icon: Paypal,
-      action: handlers.handlePayPalConnect,
-      connected: connections?.paypal,
-    },
-    {
-      name: "Flutterwave",
-      icon: flutter,
-      action: handlers.handleFlutterwaveConnect,
-      connected: connections?.flutterwave,
-    },
-    {
-      name: "Stripe",
-      icon: stripe,
-      action: handlers.handleStripeConnect,
-      connected: connections?.stripe,
-    },
-    {
-      name: "Paystack",
-      icon: paystack,
-      action: handlers.handlePaystackConnect,
-      connected: connections?.paystack,
-    },
-    {
-      name: "Skrill",
-      icon: skrill,
-      action: handlers.handleSkrillConnect,
-      connected: connections?.skrill,
-    },
-    {
-      name: "Google Pay",
-      icon: googlepay,
-      action: handlers.handleGooglePayConnect,
-      connected: connections?.googlePay,
-    },
-  ];
+  function getInvoiceFields() {
+    const fields = {};
+    document.querySelectorAll("[data-invoice-field]").forEach((el) => {
+      const key = el.dataset.invoiceField;
+
+      let value = "";
+      if (el.tagName === "A" && el.href) {
+        value = el.href;
+      } else if ("value" in el) {
+        value = el.value.trim();
+      } else {
+        value = el.innerText.trim();
+      }
+      if (fields[key]) {
+        if (key === "description" && value) {
+          fields[key] += `, ${value}`;
+        } else if (key !== "description") {
+          fields[key] = value;
+        }
+      } else {
+        fields[key] = value;
+      }
+    });
+    return fields;
+  }
 
   useEffect(() => {
-    if (!didSendRef.current) {
-      didSendRef.current = true;
-      handleSendEmail();
-    }
+    const fields = getInvoiceFields();
+    
+    const emailField = fields.clientEmail || fields.clientAddress;
+    const initialEmails = emailField 
+      ? emailField.split(',').map(e => e.trim()).filter(e => e)
+      : [];
+    setEmailAddresses(initialEmails);
+
+    setEmailData({
+      subject: `New Invoice ${fields.invoiceNumber || ""} from ${fields.companyName || ""}`,
+      message: `Dear ${fields.clientName || 'Client'},\n\nI hope this email finds you well.\n\nPlease find attached invoice ${fields.invoiceNumber || ""} for ${fields.description || ""}.\nThe total amount due is ${fields.invoiceAmount || ""}.\n\nIf you have any questions or concerns regarding this invoice, please feel free to reach out.\n\nThank you for your business!\n\nBest regards,\n${fields.companyName || "Proforma Team"}`,
+      invoiceNumber: fields.invoiceNumber || "",
+      invoiceDate: fields.invoiceDate || "",
+      dueDate: fields.dueDate || "",
+      invoiceAmount: fields.invoiceAmount || ""
+    });
   }, []);
 
   const statusSteps = [
@@ -104,12 +115,6 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
       lottieData: generatingAnimation,
       title: "Generating Invoice",
       text: "Preparing your document",
-    },
-    {
-      status: "uploading",
-      lottieData: uploadingAnimation,
-      title: "Uploading Invoice",
-      text: "Saving to cloud storage",
     },
     {
       status: "sending",
@@ -136,13 +141,12 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
         animationData: animationData,
       });
 
-      return () => anim.destroy(); // Clean up on unmount
+      return () => anim.destroy();
     }, [animationData]);
 
     return <div ref={animationContainer} style={{ width, height }} />;
   };
 
-  // Animated ellipsis component
   const AnimatedEllipsis = () => {
     const [dots, setDots] = useState("");
 
@@ -162,49 +166,23 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
     return <span className="animated-ellipsis">{dots}</span>;
   };
 
-  function getInvoiceFields() {
-    const fields = {};
-    document.querySelectorAll("[data-invoice-field]").forEach((el) => {
-      const key = el.dataset.invoiceField;
-
-      let value = "";
-      // 1️ Anchor tags → take the href
-      if (el.tagName === "A" && el.href) {
-        value = el.href;
-      }
-      // 2️ Inputs or textareas → take the .value
-      else if ("value" in el) {
-        value = el.value.trim();
-      }
-      // 3️ Everything else → innerText
-      else {
-        value = el.innerText.trim();
-      }
-
-      fields[key] = value;
-    });
-
-    return fields;
-  }
-
-  // Generate the PDF blob from the invoice DOM
   const createPDF = async () => {
     try {
       toggleStaticMode(true);
+      // Wait for React to render the static mode elements (removes inputs) before capturing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const invoiceElement = document.getElementById("invoice");
       if (!invoiceElement) throw new Error("Invoice element not found");
 
-      // Store original styles
       const originalStyle = {
         width: invoiceElement.style.width,
         overflow: invoiceElement.style.overflow,
       };
 
-      // Temporarily expand to full content width and remove overflow clipping
       invoiceElement.style.width = `${invoiceElement.scrollWidth}px`;
       invoiceElement.style.overflow = "visible";
 
-      // Create PDF and capture full canvas
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -236,7 +214,6 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
 
       const blob = pdf.output("blob");
 
-      // Restore original styles
       invoiceElement.style.width = originalStyle.width;
       invoiceElement.style.overflow = originalStyle.overflow;
 
@@ -251,92 +228,57 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
     }
   };
 
-  // Upload the blob to Cloudinary
-  const uploadPDFToCloudinary = async (pdfBlob) => {
-    setSendStatus("uploading");
-
-    // Ensure environment variables are defined
-    const cloudinaryPreset = import.meta.env.VITE_CLOUDINARY_PRESET;
-    const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-
-    if (!cloudinaryPreset || !cloudinaryCloudName) {
-      throw new Error("Cloudinary environment variables are not set");
-    }
-
-    const timestamp = new Date().getTime();
-    const uniqueFilename = `invoice_${timestamp}`;
-
-    const form = new FormData();
-    form.append("file", pdfBlob);
-    form.append("upload_preset", cloudinaryPreset);
-    form.append("public_id", uniqueFilename);
-    form.append("filename_override", "invoice.pdf");
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`,
-        {
-          method: "POST",
-          body: form,
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Cloudinary error:", errorData);
-        throw new Error("Cloudinary upload failed");
-      }
-
-      const json = await response.json();
-      if (!json.secure_url) throw new Error("Cloudinary upload failed");
-      return { url: json.secure_url };
-    } catch (error) {
-      console.error("Error uploading to Cloudinary:", error);
-      throw new Error("Cloudinary upload failed");
-    }
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   };
 
-  // Main handler for sending the email
   const handleSendEmail = async () => {
     try {
-      // Immediate payment method check
-      if (!connections?.paypal) {
-        toast.info("Please connect your Payment account to proceed.");
-        toggleStaticMode(true);
-        setShowModal(true);
-        return; // Stop execution here
-      }
-
-      // Only proceed if payment method is connected
       setIsSending(true);
       setSendStatus("generating");
 
-      // Get invoice data
       const invoiceData = getInvoiceFields();
 
-      // Validate user is logged in
-      if (!user?._id) {
-        toast.error("You must be logged in to send invoices");
-        onClose();
-        return;
+
+
+      // Allow taking whatever is in input field if they forgot to press Enter
+      const finalEmails = [...emailAddresses];
+      if (emailInput.trim()) {
+         if (!finalEmails.includes(emailInput.trim())) {
+            finalEmails.push(emailInput.trim());
+         }
       }
 
-      // Generate PDF
-      const pdfBlob = await createPDF();
+      if (finalEmails.length === 0) {
+         toast.error("At least one client email is required");
+         setIsSending(false);
+         return;
+      }
 
-      // Upload PDF
-      const { url: invoiceUrl } = await uploadPDFToCloudinary(pdfBlob);
+      const pdfBlob = await createPDF();
+      const pdfBase64 = await blobToBase64(pdfBlob);
 
       setSendStatus("sending");
 
-      // Send to backend
       await axios.post(
         `${API_URL}/send-email`,
         {
-          userId: user._id,
-          invoiceUrl,
+          userId: user?._id || 'guest',
+          pdfBase64,
           invoiceFileName: "invoice.pdf",
           ...invoiceData,
+          clientAddress: finalEmails.join(', '),
+          subject: emailData.subject,
+          message: emailData.message,
+          invoiceNumber: emailData.invoiceNumber || invoiceData.invoiceNumber,
+          invoiceDate: emailData.invoiceDate || invoiceData.invoiceDate,
+          dueDate: emailData.dueDate || invoiceData.dueDate,
+          invoiceAmount: emailData.invoiceAmount || invoiceData.invoiceAmount
         },
         {
           headers: { "Content-Type": "application/json" },
@@ -344,91 +286,171 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
         }
       );
 
-      // Success handling
       incrementInvoiceCount();
       setIsComplete(true);
       toggleStaticMode(false);
-      setTimeout(onClose, 3000); // Close after 3 seconds
+      setTimeout(onClose, 3000);
     } catch (error) {
-      onClose(); // Close modal on error
-      toggleStaticMode(false); // Ensure static mode is toggled off
+      onClose();
+      toggleStaticMode(false);
       setIsComplete(false);
       console.error("Error sending email:", error);
-      // Only show error if we actually attempted sending
-      if (connections?.paypal) {
-        toast.error("Failed to send email. Please try again.");
-      }
+      toast.error("Failed to send email. Please try again.");
     } finally {
       toggleStaticMode(false);
     }
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEmailData(prev => ({ ...prev, [name]: value }));
+  };
+
   return createPortal(
     <div className="relative">
-      {showModal && (
-        // Connection Modal
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+      {!isSending && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[99999]">
           <motion.div
-            initial={{ opacity: 0, scale: 0.6 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="bg-white rounded-2xl p-6 w-[400px] relative"
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white rounded-2xl p-8 w-[95vw] h-[95vh] max-w-6xl flex flex-col relative shadow-2xl"
           >
-            {/* Modal Header */}
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-satoshi font-bold lg:text-[1.2vw]">
-                Connect Payment Account
+              <h3 className="text-2xl font-satoshi font-bold text-gray-800">
+                Compose Email
               </h3>
               <button
-                onClick={() => {
-                  setShowModal(false);
-                }}
-                className="p-1 hover:bg-neutral-100 border border-neutral-300 rounded-full"
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <XMarkIcon className="w-6 h-6" />
+                <XMarkIcon className="w-6 h-6 text-gray-500" />
               </button>
             </div>
 
-            {/* Payment Options */}
-            <div className="space-y-3">
-              {paymentOptions.map((option) => (
-                <button
-                  key={option.name}
-                  onClick={option.action}
-                  className={`w-full flex items-center p-3 rounded-lg transition-colors border ${option.connected
-                    ? "border-green-500 bg-green-50 hover:bg-green-100"
-                    : "border-neutral-300 hover:bg-neutral-50"
-                    }`}
-                  disabled={option.connected}
+            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To (Client Emails)</label>
+                <div 
+                  className="w-full p-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-cyan-500 transition-all flex flex-wrap gap-2 items-center min-h-[48px] bg-white shadow-sm cursor-text"
+                  onClick={() => document.getElementById('email-chip-input')?.focus()}
                 >
-                  <div className="w-12 h-8 mr-3">
-                    <img
-                      src={option.icon}
-                      alt={option.name}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <span className="font-medium text-base font-satoshi lg:text-[1vw]">
-                    {option.connected
-                      ? `${option.name} Connected`
-                      : `Connect with ${option.name}`}
-                  </span>
-                </button>
-              ))}
-            </div>
+                  {emailAddresses.map((email, index) => (
+                    <span key={index} className="flex items-center gap-1.5 bg-cyan-50 border border-cyan-200 text-cyan-800 px-2.5 py-1 rounded text-sm font-medium transition-colors">
+                      {email}
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveEmail(index)} 
+                        className="text-cyan-600 hover:text-cyan-900 hover:bg-cyan-100 rounded-full w-4 h-4 flex items-center justify-center transition-colors focus:outline-none"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    id="email-chip-input"
+                    type="text"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    onKeyDown={handleEmailKeyDown}
+                    className="flex-1 outline-none min-w-[150px] text-sm bg-transparent py-1 text-gray-800"
+                    placeholder={emailAddresses.length === 0 ? "client1@example.com" : ""}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Press Enter or comma to add multiple emails</p>
+              </div>
 
-            {/* Footer */}
-            <div className="text-neutral-400 text-sm flex justify-center items-center space-x-2 font-semibold font-satoshi mt-6 lg:text-[0.9vw]">
-              <GoShieldLock size={20} />
-              <span>Secure connection via encrypted protocols</span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={emailData.subject}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
+                  placeholder="Invoice Subject"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice No</label>
+                  <input
+                    type="text"
+                    name="invoiceNumber"
+                    value={emailData.invoiceNumber}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
+                    placeholder="INV-001"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Issue Date</label>
+                  <input
+                    type="text"
+                    name="invoiceDate"
+                    value={emailData.invoiceDate}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
+                    placeholder="DD/MM/YYYY"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="text"
+                    name="dueDate"
+                    value={emailData.dueDate}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
+                    placeholder="DD/MM/YYYY"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
+                  <input
+                    type="text"
+                    name="invoiceAmount"
+                    value={emailData.invoiceAmount}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
+                    placeholder="$0.00"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  name="message"
+                  value={emailData.message}
+                  onChange={handleChange}
+                  className="flex-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all resize-none"
+                  placeholder="Enter your message..."
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-4 mt-auto">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  className="px-8 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 font-medium transition-colors shadow-sm"
+                >
+                  Send Invoice
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>
       )}
 
       {isSending && (
-        // Sending Process Modal
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm w-full h-full flex justify-center items-center z-[99999]">
           <motion.div
             initial={{ opacity: 0, scale: 0.6 }}
@@ -451,10 +473,7 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
                   <div
                     className="bg-cyan-500 h-2 rounded-full transition-all duration-500"
                     style={{
-                      width: `${(statusSteps.findIndex((s) => s.status === sendStatus) +
-                        1) *
-                        33.33
-                        }%`,
+                      width: `${(statusSteps.findIndex((s) => s.status === sendStatus) + 1) * 33.33}%`,
                     }}
                   />
                 </div>

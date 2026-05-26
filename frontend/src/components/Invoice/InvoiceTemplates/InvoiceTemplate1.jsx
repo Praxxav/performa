@@ -41,9 +41,10 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     country: "Phone : 8714076700\nEmail : sales@dehcy.in",
     clientName: "Client Name",
     clientAddress: "Client Address",
+    clientEmail: "Client Email",
     shipToName: "Client Name",
     shipToAddress: "Client Address",
-    invoiceNumber: "103",
+    invoiceNumber: "****",
     invoiceDate: "DD/MM/YYYY",
     dispatchThrough: "Air",
     items: [
@@ -232,6 +233,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
             <div
               contentEditable suppressContentEditableWarning={true}
               className="focus:outline-none hover:bg-gray-100 text-base font-bold"
+              data-invoice-field="companyName"
               onBlur={(e) => handleFieldChange("companyName", e.target.innerText)}
             >
               {invoiceData.companyName}
@@ -270,6 +272,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
               <div
                 contentEditable suppressContentEditableWarning={true}
                 className="w-1/2 p-2 focus:outline-none hover:bg-gray-100"
+                data-invoice-field="invoiceNumber"
                 onBlur={(e) => handleFieldChange("invoiceNumber", e.target.innerText)}
               >
                 {invoiceData.invoiceNumber}
@@ -279,11 +282,12 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
               <div className="w-1/2 p-2 border-r border-gray-800 font-semibold">Invoice Date</div>
               <div className="w-1/2 p-2">
                 {isStaticMode ? (
-                  <div>{invoiceData.invoiceDate}</div>
+                  <div data-invoice-field="invoiceDate">{invoiceData.invoiceDate}</div>
                 ) : (
                   <input
                     type="text"
                     className="w-full focus:outline-none bg-transparent hover:bg-gray-100"
+                    data-invoice-field="invoiceDate"
                     value={invoiceData.invoiceDate}
                     onChange={(e) => handleFieldChange("invoiceDate", e.target.value)}
                   />
@@ -317,6 +321,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
             <div
               contentEditable suppressContentEditableWarning={true}
               className="focus:outline-none hover:bg-gray-100 min-h-[1.5rem] font-bold text-left"
+              data-invoice-field="clientName"
               onBlur={(e) => handleFieldChange("clientName", e.target.innerText)}
             >
               {invoiceData.clientName}
@@ -327,6 +332,14 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
               onBlur={(e) => handleFieldChange("clientAddress", e.target.innerText)}
             >
               {invoiceData.clientAddress}
+            </div>
+            <div
+              contentEditable suppressContentEditableWarning={true}
+              className="focus:outline-none hover:bg-gray-100 min-h-[1.5rem] text-left whitespace-pre-wrap"
+              data-invoice-field="clientEmail"
+              onBlur={(e) => handleFieldChange("clientEmail", e.target.innerText)}
+            >
+              {invoiceData.clientEmail}
             </div>
           </div>
         </div>
@@ -388,10 +401,11 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
               </td>
               <td className="p-2 align-top text-left w-1/3">
                 {isStaticMode ? (
-                  <div className="whitespace-pre-wrap">{item.description}</div>
+                  <div className="whitespace-pre-wrap" data-invoice-field="description">{item.description}</div>
                 ) : (
                   <textarea
                     className="w-full focus:outline-none bg-transparent resize-none overflow-hidden placeholder-gray-400"
+                    data-invoice-field="description"
                     rows={item.description.split('\n').length || 1}
                     value={item.description}
                     placeholder="Enter a description..."
@@ -599,7 +613,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   title="Edit Currency Symbol"
                 />
               )}
-              {calculateTotal().toFixed(2)}
+              <span data-invoice-field="invoiceAmount">{calculateTotal().toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -617,11 +631,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
             {invoiceData.termsOfService}
           </div>
         </div>
-        <div className="w-1/3 flex flex-col items-center justify-end relative">
-          <div className="font-bold border-t border-gray-800 w-3/4 text-center pt-1 mt-24">
-            Authorized Signatory
-          </div>
-        </div>
+
       </div>
       <div className="text-center italic pb-4 text-xs font-semibold">
         This is a computer-generated Proforma Invoice and does not require a physical signature.

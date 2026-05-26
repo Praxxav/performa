@@ -3,7 +3,7 @@ import createTransporter from "./email.config.js";
 import Invoice from "../models/invoice.model.js";
 import axios from "axios";
 import dotenv from 'dotenv';
-import { verifyToken } from "../middleware/verifyToken.js";
+
 import { User } from '../models/user.model.js';
 import { decrypt, encrypt } from "../utils/encrypt.js";
 import { enforceMonthlyLimit } from "../middleware/usageLimit.js";
@@ -169,9 +169,9 @@ async function getValidPayPalAccessToken(userId) {
 }
 
 
-router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) => {
+router.post("/send-email", async (req, res) => {
   const {
-    invoiceUrl,
+    pdfBase64,
     invoiceFileName,
     clientAddress,
     clientName,
@@ -182,30 +182,43 @@ router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) =>
     invoiceAmount,
     invoiceDate,
     invoiceNumber,
-    userId
+    userId,
+    subject,
+    message
   } = req.body;
 
-  if (!invoiceUrl) {
-    return res.status(400).json({ error: "Missing invoice URL" });
+  if (!pdfBase64) {
+    return res.status(400).json({ error: "Missing invoice PDF data" });
   }
 
   try {
     // Convert string amount to numeric for database storage first
-    const amountNumeric = parseFloat(invoiceAmount.replace(/[^0-9.]/g, ''));
+    const amountNumeric = invoiceAmount ? parseFloat(invoiceAmount.replace(/[^0-9.]/g, '')) : 0;
+
+    // Helper to safely parse DD/MM/YYYY dates
+    const parseSafeDate = (dateStr) => {
+      if (!dateStr) return new Date();
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const parsed = new Date(parts[2], parts[1] - 1, parts[0]);
+        if (!isNaN(parsed)) return parsed;
+      }
+      const standardParsed = new Date(dateStr);
+      return isNaN(standardParsed) ? new Date() : standardParsed;
+    };
 
     // 1. FIRST SAVE THE INVOICE TO GET _id
     const invoiceData = new Invoice({
-      userId,
-      invoiceNumber,
-      clientName,
-      clientAddress,
-      companyName,
-      companyAddress,
-      description,
+      userId: userId || 'guest',
+      invoiceNumber: invoiceNumber || `INV-${Date.now()}`,
+      clientName: clientName || 'Client',
+      clientAddress: clientAddress || 'N/A',
+      companyName: companyName || 'Company',
+      companyAddress: companyAddress || '',
+      description: description || '',
       amountNumeric,
-      invoiceDate,
-      dueDate,
-      invoiceUrl,
+      invoiceDate: parseSafeDate(invoiceDate),
+      dueDate: parseSafeDate(dueDate),
       invoiceFileName: invoiceFileName || `Invoice-${invoiceNumber}.pdf`,
       sentDate: new Date()
     });
@@ -214,35 +227,11 @@ router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) =>
     const savedInvoice = await invoiceData.save();
 
     // Save to InvoiceLog to persist history
-    await invoiceLog.create({ userId });
-
-    // 2. NOW GENERATE PAYMENT LINK WITH THE _id
-    let paymentLink;
-    try {
-      paymentLink = await generatePayPalPaymentLink({
-        _id: savedInvoice._id, // Add the _id to the details
-        amount: invoiceAmount.replace(/[^0-9.]/g, ''),
-        description: description || `Invoice ${invoiceNumber}`,
-        invoiceNumber: invoiceNumber,
-        companyName: companyName,
-        userId
-      });
-      
-      // 3. UPDATE INVOICE WITH PAYMENT LINK
-      savedInvoice.paymentLink = paymentLink;
-      await savedInvoice.save();
-      
-    } catch (paypalError) {
-      console.error("Failed to generate PayPal payment link:", paypalError);
-      // Optionally mark invoice as failed
-      await Invoice.findByIdAndUpdate(savedInvoice._id, { 
-        status: 'payment_failed',
-        error: paypalError.message 
-      });
-      throw new Error("Failed to generate PayPal payment link");
+    if (userId && userId !== 'guest') {
+      await invoiceLog.create({ userId });
     }
 
-    // 4. NOW SEND EMAIL WITH COMPLETE DATA
+    // 2. NOW SEND EMAIL WITH COMPLETE DATA
     const transporter = await createTransporter();
     const html =  `
     <!DOCTYPE html>
@@ -263,16 +252,11 @@ router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) =>
                             <td style="padding: 15px 10px;">
                                 <table role="presentation" style="width: 100%; border-collapse: collapse; border: 0;">
                                     <!-- Greeting -->
-                                    <tr>
-                                        <td style="padding: 0 0 20px 0;">
-                                            <p style="margin: 0; font-size: 16px; line-height: 24px;">Hello ${clientName},</p>
-                                        </td>
-                                    </tr>
                                     
                                     <!-- Main Message -->
                                     <tr>
                                         <td style="padding: 0 0 20px 0;">
-                                            <p style="margin: 0; font-size: 16px; line-height: 24px;">Thank you for your business. Your invoice ${invoiceNumber} for ${description} is attached to this email. The total amount due is ${invoiceAmount}.</p>
+                                            <p style="margin: 0; font-size: 16px; line-height: 24px; white-space: pre-wrap;">${message || `Thank you for your business. Your invoice ${invoiceNumber} for ${description} is attached to this email. The total amount due is ${invoiceAmount}.`}</p>
                                         </td>
                                     </tr>
                                     
@@ -301,23 +285,12 @@ router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) =>
                                     </tr>
                                     
     
-                                    <tr>
-                                        <td style="padding: 20px 0;">
-                                            <table role="presentation" style="width: 100%; border-collapse: collapse; border: 0;">
-                                                <tr>
-                                                    <td style="text-align: center;">
-                                                        <p style="margin: 0 0 15px 0; font-size: 16px; line-height: 24px;">To make payment, please click the button below:</p>
-                                                        <a href="${paymentLink}" style="background-color: #1d604b; border: none; color: white; padding: 12px 28px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; font-weight: bold; border-radius: 4px;">Pay Invoice Now</a>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
+
                                     
                                     <tr>
                                         <td style="padding: 20px 0 0 0;">
                                             <p style="margin: 0; font-size: 16px; line-height: 24px;">Please review the attached PDF for a detailed breakdown of your invoice.</p>
-                                            <p style="margin: 15px 0 0 0; font-size: 16px; line-height: 24px;">If you have any questions about this invoice, please contact us at <a href="mailto:${companyAddress}" style="color: #1d604b; text-decoration: underline;">${companyAddress}</a>.</p>
+                                            <p style="margin: 15px 0 0 0; font-size: 16px; line-height: 24px;">If you have any questions about this invoice, please contact us at <a href="mailto:support@bestypop.com" style="color: #1d604b; text-decoration: underline;">support@bestypop.com</a>.</p>
                                         </td>
                                     </tr>
                                     
@@ -325,7 +298,7 @@ router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) =>
                                     <tr>
                                         <td style="padding: 25px 0 0 0;">
                                             <p style="margin: 0; font-size: 16px; line-height: 24px;">Thank you for your business.</p>
-                                            <p style="margin: 15px 0 0 0; font-size: 16px; line-height: 24px;">Best regards,<br>Proforma Team</p>
+                                      
                                         </td>
                                     </tr>
                                 </table>
@@ -342,27 +315,27 @@ router.post("/send-email", verifyToken, enforceMonthlyLimit, async (req, res) =>
 
     const mailOptions = {
       from: {
-        name: "Proforma",
-        address: process.env.EMAIL
+        name: process.env.SMTP_FROM_NAME || "Proforma",
+        address: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
       },
       to: clientAddress,
-      subject: `Invoice ${invoiceNumber} from ${companyName}`,
+      bcc: "Jineesh.mathew@dehcy.in",
+      subject: subject || `Invoice ${invoiceNumber} from ${companyName}`,
       html,
       attachments: [{
         filename: invoiceFileName || `Invoice-${invoiceNumber}.pdf`,
-        path: invoiceUrl,
+        content: Buffer.from(pdfBase64.split(",")[1] || pdfBase64, 'base64'),
         contentType: "application/pdf"
       }],
       headers: {
         'X-Entity-Ref-ID': `invoice-${invoiceNumber}`,
-        'List-Unsubscribe': `<mailto:${process.env.EMAIL}?subject=unsubscribe>`
+        'List-Unsubscribe': `<mailto:${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}?subject=unsubscribe>`
       }
     };
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({
       message: "Email sent successfully with invoice attachment",
-      paymentLink,
       invoiceId: savedInvoice._id
     });
 

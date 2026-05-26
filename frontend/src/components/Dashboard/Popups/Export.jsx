@@ -25,8 +25,8 @@ const Export = ({ onExportPDF, onExportEmail, isExporting }) => {
   };
 
   // Free‑tier email lock
-  const isEmailLocked = false;
-    // selectedOption === "email" && user?.tier === "free" && invoiceCount >= 10;
+  const isEmailLocked =
+    selectedOption === "email" && user?.tier === "free" && invoiceCount >= 10;
 
   // Decide the button label
   let label;
@@ -52,10 +52,10 @@ const Export = ({ onExportPDF, onExportEmail, isExporting }) => {
 
   // Handle click
   const onClick = () => {
-    // if (isEmailLocked) {
-    //   // Redirect free user to upgrade
-    //   return navigate("/upgrade");
-    // }
+    if (isEmailLocked) {
+      // Redirect free user to upgrade
+      return navigate("/upgrade");
+    }
     // Otherwise perform the normal export
     handleExport();
   };
@@ -91,7 +91,6 @@ const Export = ({ onExportPDF, onExportEmail, isExporting }) => {
         </div>
 
         {/* Export and Email */}
-        {/*
         <div className="flex items-center justify-between space-x-2 mb-6">
           <label htmlFor="email" className="flex items-center space-x-2">
             <MdOutlineAttachEmail size={30} className="text-zinc-900" />
@@ -112,7 +111,6 @@ const Export = ({ onExportPDF, onExportEmail, isExporting }) => {
             className="w-4 h-4 accent-cyan-700"
           />
         </div>
-        */}
 
         {/* Export Button */}
         <button

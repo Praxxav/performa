@@ -173,7 +173,7 @@ const InvoiceGenerator = () => {
         <div className="flex flex-col gap-3 justify-between pb-5 md:py-7 md:pb-0 md:items-center md:flex-row lg:py-0">
           <TextEditor onFormat={handleFormat} />
           <div className="flex items-center px-[1vw] space-x-[3vw] md:space-x-[1vw]">
-            <div className="relative" ref={downloadDropdownRef}>
+            {/* <div className="relative" ref={downloadDropdownRef}>
               <button
                 onClick={toggleDownload}
                 className="flex items-center text-[4vw] font-satoshi gap-2 bg-cyan-700 box text-white px-4 py-2 rounded-xl md:text-base lg:py-3 lg:text-[1vw]"
@@ -195,7 +195,7 @@ const InvoiceGenerator = () => {
                   isDownloading={isDownloading}
                 />
               )}
-            </div>
+            </div> */}
 
             <div className="relative" ref={exportDropdownRef}>
               <button

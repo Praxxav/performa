@@ -316,6 +316,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
             <div
               contentEditable suppressContentEditableWarning={true}
               className="block text-gray-500 w-full font-bold font-satoshi focus:outline-none border-b border-transparent hover:border-gray-300 text-base"
+              data-invoice-field="companyName"
               onBlur={(e) => handleFieldChange("companyName", e.target.innerText)}
             >
               {invoiceData.companyName}
@@ -684,6 +685,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
               <div
                 contentEditable suppressContentEditableWarning={true}
                 className="block w-full text-gray-500 font-satoshi focus:outline-none border-b border-transparent hover:border-gray-300 text-sm"
+                data-invoice-field="companyName"
                 onBlur={(e) => handleFieldChange("companyName", e.target.innerText)}
               >
                 {invoiceData.companyName}
