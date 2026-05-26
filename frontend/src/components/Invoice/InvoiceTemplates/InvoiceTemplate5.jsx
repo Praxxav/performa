@@ -677,7 +677,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
             </div>
           </div>
           
-          <div className="mt-8">
+          {/* <div className="mt-8">
             <h3 className="font-bold mb-2 font-satoshi text-base">
               Authorized Signatory
             </h3>
@@ -691,7 +691,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                 {invoiceData.companyName}
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
       
