@@ -185,6 +185,15 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
     });
   };
 
+  const colStyles = [
+    { width: "35%", minWidth: "280px" },
+    { width: "12%", minWidth: "100px" },
+    { width: "10%", minWidth: "70px" },
+    { width: "13%", minWidth: "90px" },
+    { width: "17%", minWidth: "150px" },
+    { width: "13%", minWidth: "110px" }
+  ];
+
   return (
     <div className="min-w-[800px] w-full bg-white p-8">
       {/* Header */}
@@ -375,7 +384,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
             <thead>
               <tr className="text-gray-800 uppercase border-b">
                 {invoiceData.tableHeaders.map((header, index) => (
-                  <th key={index} className="text-left pb-4 px-4 font-satoshi text-base">
+                  <th key={index} style={colStyles[index]} className="text-left pb-4 px-4 font-satoshi text-base">
                     {isStaticMode ? (
                       <span>{header}</span>
                     ) : (
@@ -393,10 +402,10 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
             <tbody>
               {invoiceData.items.map((item, index) => (
                 <tr key={index} className="border-b group relative">
-                  <td>
+                  <td style={colStyles[0]}>
                     {isStaticMode ? (
                       <div
-                        className="w-[300px] px-4 py-2 font-satoshi text-base whitespace-pre-wrap"
+                        className="w-full px-4 py-2 font-satoshi text-base whitespace-pre-wrap"
                         data-invoice-field="description"
                       >
                         {item.description || ""}
@@ -404,7 +413,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                     ) : (
                       <textarea
                         data-invoice-field="description"
-                        className="w-[300px] px-4 py-3 focus:outline-none font-satoshi text-base bg-transparent resize-none overflow-hidden"
+                        className="w-full px-4 py-3 focus:outline-none font-satoshi text-base bg-transparent resize-none overflow-hidden"
                         rows={item.description.split('\n').length || 1}
                         value={item.description}
                         placeholder="Enter a description"
@@ -414,7 +423,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                       />
                     )}
                   </td>
-                  <td>
+                  <td style={colStyles[1]}>
                     {isStaticMode ? (
                       <p className="px-4 py-2 font-satoshi text-base">
                         {item.hsnSku || ""}
@@ -431,7 +440,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                       />
                     )}
                   </td>
-                  <td>
+                  <td style={colStyles[2]}>
                     {isStaticMode ? (
                       <p className="px-4 py-2 font-satoshi text-base">
                         {item.qty || ""}
@@ -452,7 +461,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                       />
                     )}
                   </td>
-                  <td>
+                  <td style={colStyles[3]}>
                     {isStaticMode ? (
                       <p className="px-4 py-2 font-satoshi text-base">
                         {item.rate || ""}
@@ -473,7 +482,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                       />
                     )}
                   </td>
-                  <td>
+                  <td style={colStyles[4]}>
                     {isStaticMode ? (
                       <p className="px-4 py-2 font-satoshi text-base">
                         {item.gstPercentage || "0"}
@@ -494,7 +503,7 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                       />
                     )}
                   </td>
-                  <td>
+                  <td style={colStyles[5]}>
                     {isStaticMode ? (
                       <p className="px-4 py-2 font-satoshi text-base">
                         {item.amount.toFixed(2)}

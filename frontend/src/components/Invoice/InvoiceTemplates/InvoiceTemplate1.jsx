@@ -206,6 +206,8 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     });
   };
 
+  const colWidths = ["w-12", "w-1/3", "", "w-20", "w-24", "w-32", "w-32"];
+
   return (
     <div className="min-w-[800px] w-full font-satoshi text-sm border-2 border-gray-800 bg-white">
       {/* Header section */}
@@ -387,7 +389,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
         <thead>
           <tr className="bg-gray-900 text-white divide-x-2 divide-gray-800 border-b-2 border-gray-800">
             {invoiceData.tableHeaders.map((header, index) => (
-              <th key={index} className="px-2 py-1 text-center font-bold">
+              <th key={index} className={`px-2 py-1 text-center font-bold ${colWidths[index] || ""}`}>
                 {isStaticMode ? (
                   <span>{header}</span>
                 ) : (
@@ -467,7 +469,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   />
                 )}
               </td>
-              <td className="p-2 align-top w-20">
+              <td className="p-2 align-top w-32">
                 {isStaticMode ? (
                   <span>{item.gstPercentage}</span>
                 ) : (
