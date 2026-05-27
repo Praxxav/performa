@@ -89,7 +89,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
       branch: "Chennai",
     },
     termsOfService: "1. This is a Proforma Invoice only and not a Tax Invoice.\n2. Goods/Services will be delivered after payment confirmation.\n3. Prices are inclusive/exclusive of GST as mentioned.\n4. Payment once made is non-refundable.\n5. Subject to Chennai Jurisdiction.",
-    tableHeaders: ["S.No", "Description of Goods", "HSN/SKU", "Qty", "Rate", "GST %", "Amount"],
+    tableHeaders: ["S.No", "Description of Goods", "HSN/SKU", "Qty", "Rate", "CGST/SGST %", "Amount"],
   });
 
   const calculateSubTotal = () => {
