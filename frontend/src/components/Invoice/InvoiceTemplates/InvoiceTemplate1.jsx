@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiX, FiUpload } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
@@ -33,6 +33,24 @@ const convertNumberToWords = (amount, currencyName = "Rupees") => {
 };
 
 const InvoiceTemplate1 = ({ isStaticMode }) => {
+  const [referenceCounter, setReferenceCounter] = useState(() => {
+    const stored = localStorage.getItem("proforma_invoice_reference_counter");
+    return stored ? parseInt(stored, 10) : 1;
+  });
+
+  useEffect(() => {
+    const handleIncrement = () => {
+      const stored = localStorage.getItem("proforma_invoice_reference_counter");
+      setReferenceCounter(stored ? parseInt(stored, 10) : 1);
+    };
+    window.addEventListener("invoice_reference_incremented", handleIncrement);
+    return () => {
+      window.removeEventListener("invoice_reference_incremented", handleIncrement);
+    };
+  }, []);
+
+  const defaultInvoiceNumber = `INV-${String(referenceCounter).padStart(3, "0")}`;
+
   const [invoiceData, setInvoiceData] = useState({
     companyLogo: null,
     companyName: "HIGHRANGEKART",
@@ -44,7 +62,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     clientEmail: "Client Email",
     shipToName: "Client Name",
     shipToAddress: "Client Address",
-    invoiceNumber: "****",
+    invoiceNumber: "",
     invoiceDate: "DD/MM/YYYY",
     dispatchThrough: "Air",
     items: [
@@ -275,7 +293,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                 data-invoice-field="invoiceNumber"
                 onBlur={(e) => handleFieldChange("invoiceNumber", e.target.innerText)}
               >
-                {invoiceData.invoiceNumber}
+                {invoiceData.invoiceNumber || defaultInvoiceNumber}
               </div>
             </div>
             <div className="flex border-b border-gray-800">

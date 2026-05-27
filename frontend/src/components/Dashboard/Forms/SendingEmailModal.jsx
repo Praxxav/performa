@@ -313,6 +313,12 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
         }
       );
 
+      // Increment reference counter for InvoiceTemplate5
+      const currentRefCounter = localStorage.getItem("proforma_invoice_reference_counter");
+      const nextRefCounter = (currentRefCounter ? parseInt(currentRefCounter, 10) : 1) + 1;
+      localStorage.setItem("proforma_invoice_reference_counter", nextRefCounter);
+      window.dispatchEvent(new Event("invoice_reference_incremented"));
+
       incrementInvoiceCount();
       setIsComplete(true);
       toggleStaticMode(false);

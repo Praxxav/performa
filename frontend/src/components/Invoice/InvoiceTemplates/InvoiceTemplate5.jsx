@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 
@@ -33,6 +33,24 @@ const convertNumberToWords = (amount, currencyName = "Rupees") => {
 };
 
 const InvoiceTemplate5 = ({ isStaticMode }) => {
+  const [referenceCounter, setReferenceCounter] = useState(() => {
+    const stored = localStorage.getItem("proforma_invoice_reference_counter");
+    return stored ? parseInt(stored, 10) : 1;
+  });
+
+  useEffect(() => {
+    const handleIncrement = () => {
+      const stored = localStorage.getItem("proforma_invoice_reference_counter");
+      setReferenceCounter(stored ? parseInt(stored, 10) : 1);
+    };
+    window.addEventListener("invoice_reference_incremented", handleIncrement);
+    return () => {
+      window.removeEventListener("invoice_reference_incremented", handleIncrement);
+    };
+  }, []);
+
+  const defaultReference = `INV-${String(referenceCounter).padStart(3, "0")}`;
+
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: "",
     dueDate: "",
@@ -247,11 +265,12 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
               <div
                 contentEditable suppressContentEditableWarning={true}
                 className="focus:outline-none border-b border-transparent hover:border-gray-300 text-gray-600 font-satoshi font-bold text-base"
+                data-invoice-field="reference"
                 onBlur={(e) =>
                   handleFieldChange("reference", e.target.innerText)
                 }
               >
-                {invoiceData.reference || "INV-057"}
+                {invoiceData.reference || defaultReference}
               </div>
             </div>
           </div>
