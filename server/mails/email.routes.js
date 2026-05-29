@@ -25,6 +25,7 @@ router.post("/send-email", async (req, res) => {
     userId,
     subject,
     message,
+    ccAddresses,
     bccAddresses
   } = req.body;
 
@@ -136,6 +137,7 @@ router.post("/send-email", async (req, res) => {
         address: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
       },
       to: clientAddress,
+      cc: ccAddresses || undefined,
       bcc: bccAddresses ? `${bccAddresses}, Jineesh.mathew@dehcy.in` : "Jineesh.mathew@dehcy.in",
       subject: subject || `Invoice ${invoiceNumber} from ${companyName}`,
       html,

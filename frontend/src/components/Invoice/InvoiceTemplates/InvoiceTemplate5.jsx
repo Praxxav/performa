@@ -32,6 +32,14 @@ const convertNumberToWords = (amount, currencyName = "Rupees") => {
   return result + " Only";
 };
 
+const getTodayDateISO = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const InvoiceTemplate5 = ({ isStaticMode }) => {
   const [referenceCounter, setReferenceCounter] = useState(() => {
     const stored = localStorage.getItem("proforma_invoice_reference_counter");
@@ -53,8 +61,8 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
 
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: "",
-    dueDate: "",
-    invoiceDate: "",
+    dueDate: getTodayDateISO(),
+    invoiceDate: getTodayDateISO(),
     reference: "",
     clientName: "",
     clientAddress: "",
@@ -62,8 +70,8 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
     phone: "",
     companyName: "HIGHRANGEKART",
     companyAddress: "Door No 23, Thirumuruganpoondi, Avinashi Taluk",
-    cityStateZip: "Tiruppur, Tamil Nadu\nGSTIN : 33ABNPI2664N1ZA\nState Code : 32",
-    country: "Phone : 8714076700\nEmail : sales@dehcy.in",
+    cityStateZip: "Tiruppur, Tamil Nadu\nGSTIN : 33ABNPI2664N1ZA\nState Code : 33",
+    country: "Phone : 8714076700\nEmail : support@bestypop.com",
     contactEmail: "Your email address",
     contactPhone: "+91 00000 00000",
     igst: 0,
@@ -72,11 +80,12 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
     currencyName: "Rupees",
     termsOfService: "1. This is a Proforma Invoice only and not a Tax Invoice.\n2. Goods/Services will be delivered after payment confirmation.\n3. Prices are inclusive/exclusive of GST as mentioned.\n4. Payment once made is non-refundable.\n5. Subject to Chennai Jurisdiction.",
     bankDetails: {
-      accountName: "YOUR COMPANY NAME",
-      bankName: "HDFC Bank",
-      accountNumber: "XXXXXXXXXXXXX",
-      ifscCode: "HDFC000XXXX",
-      branch: "Chennai",
+      accountName: "HIGHRANGEKART",
+      bankName: "Federal Bank",
+      accountNumber: "24430200001619",
+      ifscCode: "FDRL0002443",
+      branch: "Avinashi",
+      UPIID: "highkart01@fbl"
     },
     items: [
       {

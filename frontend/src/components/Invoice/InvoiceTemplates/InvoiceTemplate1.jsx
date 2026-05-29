@@ -32,6 +32,14 @@ const convertNumberToWords = (amount, currencyName = "Rupees") => {
   return result + " Only";
 };
 
+const getTodayDateString = () => {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yyyy = today.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 const InvoiceTemplate1 = ({ isStaticMode }) => {
   const [referenceCounter, setReferenceCounter] = useState(() => {
     const stored = localStorage.getItem("proforma_invoice_reference_counter");
@@ -55,16 +63,16 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     companyLogo: null,
     companyName: "HIGHRANGEKART",
     companyAddress: "Door No 23, Thirumuruganpoondi, Avinashi Taluk",
-    cityStateZip: "Tiruppur, Tamil Nadu\nGSTIN : 33ABNPI2664N1ZA\nState Code : 32",
-    country: "Phone : 8714076700\nEmail : sales@dehcy.in",
-    clientName: "Client Name",
-    clientAddress: "Client Address",
-    clientEmail: "Client Email",
-    shipToName: "Client Name",
-    shipToAddress: "Client Address",
+    cityStateZip: "Tiruppur, Tamil Nadu\nGSTIN : 33ABNPI2664N1ZA\nState Code : 33",
+    country: "Phone : 8714076700\nEmail : support@bestypop.com",
+    clientName: "Client Name:",
+    clientAddress: "Client Address:",
+    clientEmail: "Client Email:",
+    shipToName: "Client Name:",
+    shipToAddress: "Client Address:",
     invoiceNumber: "",
-    invoiceDate: "DD/MM/YYYY",
-    dispatchThrough: "Air",
+    invoiceDate: getTodayDateString(),
+    dispatchThrough: "To be decided",
     items: [
       {
         sNo: "1",
@@ -82,11 +90,12 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     sgst: 0,
     igst: 0,
     bankDetails: {
-      accountName: "YOUR COMPANY NAME",
-      bankName: "HDFC Bank",
-      accountNumber: "XXXXXXXXXXXXX",
-      ifscCode: "HDFC000XXXX",
-      branch: "Chennai",
+      accountName: "HIGHRANGEKART",
+      bankName: "Federal Bank",
+      accountNumber: "24430200001619",
+      ifscCode: "FDRL0002443",
+      branch: "Avinashi",
+      UPIID: "highkart01@fbl"
     },
     termsOfService: "1. This is a Proforma Invoice only and not a Tax Invoice.\n2. Goods/Services will be delivered after payment confirmation.\n3. Prices are inclusive/exclusive of GST as mentioned.\n4. Payment once made is non-refundable.\n5. Subject to Chennai Jurisdiction.",
     tableHeaders: ["S.No", "Description of Goods", "HSN/SKU", "Qty", "Rate", "CGST/SGST %", "Amount"],
