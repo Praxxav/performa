@@ -696,6 +696,15 @@ const InvoiceTemplate5 = ({ isStaticMode }) => {
                   onBlur={(e) => handleBankFieldChange("branch", e.target.innerText)}
                 >{invoiceData.bankDetails.branch}</div>
               </div>
+              <div className="font-semibold">UPI ID</div>
+              <div className="flex">
+                <span className="mr-2">:</span>
+                <div
+                  contentEditable suppressContentEditableWarning={true}
+                  className="focus:outline-none hover:bg-gray-100 flex-1"
+                  onBlur={(e) => handleBankFieldChange("UPIID", e.target.innerText)}
+                >{invoiceData.bankDetails.UPIID}</div>
+              </div>
             </div>
           </div>
         </div>
