@@ -35,13 +35,13 @@ const convertNumberToWords = (amount, currencyName = "Rupees") => {
 const InvoiceTemplate5 = ({ isStaticMode }) => {
   const [referenceCounter, setReferenceCounter] = useState(() => {
     const stored = localStorage.getItem("proforma_invoice_reference_counter");
-    return stored ? parseInt(stored, 10) : 1;
+    return stored ? parseInt(stored, 10) : 234;
   });
 
   useEffect(() => {
     const handleIncrement = () => {
       const stored = localStorage.getItem("proforma_invoice_reference_counter");
-      setReferenceCounter(stored ? parseInt(stored, 10) : 1);
+      setReferenceCounter(stored ? parseInt(stored, 10) : 234);
     };
     window.addEventListener("invoice_reference_incremented", handleIncrement);
     return () => {
