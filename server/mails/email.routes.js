@@ -74,7 +74,7 @@ router.post("/send-email", async (req, res) => {
                                     <!-- Main Message -->
                                     <tr>
                                         <td style="padding: 0 0 20px 0;">
-                                            <p style="margin: 0; font-size: 16px; line-height: 24px; white-space: pre-wrap;">${message || `Thank you for your business. Your invoice ${invoiceNumber} for ${description} is attached to this email. The total amount due is ${invoiceAmount}.`}</p>
+                                            <p style="margin: 0; font-size: 16px; line-height: 24px; white-space: pre-wrap;">${message || `Thank you for your business. Your invoice ${invoiceNumber} for ${description} is attached to this email. The total amount will be ${invoiceAmount}.`}</p>
                                         </td>
                                     </tr>
                                     

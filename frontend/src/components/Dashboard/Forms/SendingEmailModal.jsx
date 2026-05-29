@@ -120,7 +120,7 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
 
     setEmailData({
       subject: `Invoice ${fields.invoiceNumber || ""} from ${fields.companyName || ""}`,
-      message: `Dear ${fields.clientName || 'Client'},\n\nI hope this email finds you well.\n\nPlease find attached invoice ${fields.invoiceNumber || ""} for ${fields.description || ""}.\nThe total amount due is ${fields.invoiceAmount || ""}.\n\nIf you have any questions or concerns regarding this invoice, please feel free to reach out.\n\nThank you for your business!\n\nBest regards,\n${fields.companyName || "Proforma Team"}`,
+      message: `Dear ${fields.clientName || 'Client'},\n\nI hope this email finds you well.\n\nPlease find attached invoice ${fields.invoiceNumber || ""} for ${fields.description || ""}.\nThe total amount will be ${fields.invoiceAmount || ""}.\n\nIf you have any questions or concerns regarding this invoice, please feel free to reach out.\n\nThank you for your business!\n\nBest regards,\n${fields.companyName || "Proforma Team"}`,
       invoiceNumber: fields.invoiceNumber || "",
       invoiceDate: fields.invoiceDate || "",
       dueDate: fields.dueDate || "",
