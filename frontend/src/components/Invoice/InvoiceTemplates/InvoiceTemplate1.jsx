@@ -57,6 +57,19 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
     };
   }, []);
 
+  useEffect(() => {
+    setInvoiceData((prev) => {
+      const isDefaultPattern = !prev.invoiceNumber || /^INV-\d+$/.test(prev.invoiceNumber);
+      if (isDefaultPattern) {
+        return {
+          ...prev,
+          invoiceNumber: `INV-${String(referenceCounter).padStart(3, "0")}`,
+        };
+      }
+      return prev;
+    });
+  }, [referenceCounter]);
+
   const defaultInvoiceNumber = `INV-${String(referenceCounter).padStart(3, "0")}`;
 
   const [invoiceData, setInvoiceData] = useState({
