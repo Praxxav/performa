@@ -97,36 +97,152 @@ const InvoiceGenerator = () => {
     toggleStaticMode(true); // Convert to static text before exporting
     setIsExporting(true);
 
-    setTimeout(() => {
-      const invoiceElement = document.getElementById("invoice");
+    setTimeout(async () => {
+      try {
+        const invoiceElement = document.getElementById("invoice");
+        if (!invoiceElement) throw new Error("Invoice element not found");
 
-      html2canvas(invoiceElement, { scale: 2 }).then((canvas) => {
-        const imgData = canvas.toDataURL("image/png");
+        // 1. Find all optimal page break positions in DOM pixels
+        const containerRect = invoiceElement.getBoundingClientRect();
+        const containerHeight = containerRect.height;
+        const containerWidth = invoiceElement.offsetWidth;
+        
+        // Standard A4 height in pixels relative to container width
+        const maxPageHeightPx = (containerWidth * 297) / 210;
+        
+        // Find all elements to keep together
+        const candidateElements = [];
+        const templateContainer = invoiceElement.firstElementChild;
+        if (templateContainer) {
+          Array.from(templateContainer.children).forEach(child => {
+            candidateElements.push(child);
+            if (child.tagName === "TABLE") {
+              child.querySelectorAll("tr").forEach(tr => {
+                candidateElements.push(tr);
+              });
+            } else {
+              child.querySelectorAll("tr, .grid, .flex").forEach(el => {
+                candidateElements.push(el);
+              });
+            }
+          });
+        } else {
+          invoiceElement.querySelectorAll("tr, div").forEach(el => {
+            candidateElements.push(el);
+          });
+        }
+
+        // Map elements to their top and bottom ranges relative to invoiceElement
+        const ranges = candidateElements
+          .map(el => {
+            const rect = el.getBoundingClientRect();
+            return {
+              top: rect.top - containerRect.top,
+              bottom: rect.bottom - containerRect.top,
+              height: rect.height
+            };
+          })
+          .filter(r => r.height > 0 && r.height < maxPageHeightPx);
+
+        // Sort by top coordinate
+        ranges.sort((a, b) => a.top - b.top);
+
+        const breaks = [];
+        let currentTop = 0;
+
+        while (currentTop + maxPageHeightPx < containerHeight) {
+          const targetBottom = currentTop + maxPageHeightPx;
+          let bestBreak = targetBottom;
+
+          // Find the first element that crosses the boundary
+          for (const range of ranges) {
+            if (range.top < targetBottom && range.bottom > targetBottom) {
+              if (range.top > currentTop) {
+                bestBreak = range.top;
+                break;
+              }
+            }
+          }
+
+          breaks.push(bestBreak);
+          currentTop = bestBreak;
+        }
+        breaks.push(containerHeight);
+
+        // 2. Generate canvas
+        const canvas = await html2canvas(invoiceElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          imageTimeout: 0,
+        });
+
+        // Calculate pixel scale (canvas coordinates to DOM coordinates)
+        const pixelScale = canvas.width / containerWidth;
+
+        // Create jsPDF document
         const pdf = new jsPDF("p", "mm", "a4");
 
-        const imgWidth = 210; // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
+        // Add pages slice by slice
+        for (let i = 0; i < breaks.length; i++) {
+          const breakStart = i === 0 ? 0 : breaks[i - 1];
+          const breakEnd = breaks[i];
+          const sliceHeight = breakEnd - breakStart;
+          
+          if (sliceHeight <= 0) continue;
 
-        // Add first page
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+          // Get slice in canvas coordinates
+          const startY = breakStart * pixelScale;
+          const endY = breakEnd * pixelScale;
+          const canvasSliceHeight = sliceHeight * pixelScale;
 
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+          // Create a canvas for this slice
+          const sliceCanvas = document.createElement("canvas");
+          sliceCanvas.width = canvas.width;
+          sliceCanvas.height = canvasSliceHeight;
+          const ctx = sliceCanvas.getContext("2d");
+
+          // Copy the slice from the original canvas
+          ctx.drawImage(
+            canvas,
+            0,
+            startY,
+            canvas.width,
+            canvasSliceHeight,
+            0,
+            0,
+            canvas.width,
+            canvasSliceHeight
+          );
+
+          const imgData = sliceCanvas.toDataURL("image/png");
+          const imgWidth = 210;
+          const imgHeight = (canvasSliceHeight * imgWidth) / canvas.width;
+
+          if (i > 0) {
+            pdf.addPage();
+          }
+
+          pdf.addImage(
+            imgData,
+            "PNG",
+            0,
+            0,
+            imgWidth,
+            imgHeight,
+            undefined,
+            "FAST"
+          );
         }
 
         pdf.save("invoice.pdf");
-
+      } catch (error) {
+        console.error("Error creating PDF:", error);
+      } finally {
         toggleStaticMode(false); // Revert back to editable fields
         setIsExporting(false);
         toggleExport();
-      });
+      }
     }, 500);
   };
 
