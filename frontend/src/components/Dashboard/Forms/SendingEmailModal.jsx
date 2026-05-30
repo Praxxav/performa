@@ -218,18 +218,39 @@ const SendingEmailModal = ({ onClose, toggleStaticMode }) => {
 
       const imgData = canvas.toDataURL("image/jpeg", 0.6);
       const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
 
+      // Add first page
       pdf.addImage(
         imgData,
         "JPEG",
         0,
-        0,
+        position,
         imgWidth,
         imgHeight,
         undefined,
         "FAST"
       );
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(
+          imgData,
+          "JPEG",
+          0,
+          position,
+          imgWidth,
+          imgHeight,
+          undefined,
+          "FAST"
+        );
+        heightLeft -= pageHeight;
+      }
 
       const blob = pdf.output("blob");
 
