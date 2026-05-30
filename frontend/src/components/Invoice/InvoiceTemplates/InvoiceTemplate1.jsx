@@ -429,7 +429,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
         <tbody className="divide-y divide-gray-400">
           {invoiceData.items.map((item, index) => (
             <tr key={index} className="group relative divide-x-2 divide-gray-800 text-center">
-              <td className="p-2 align-top w-12">
+              <td className="p-2 w-12" style={{ verticalAlign: 'top' }}>
                 {isStaticMode ? (
                   <span>{item.sNo}</span>
                 ) : (
@@ -441,21 +441,32 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   />
                 )}
               </td>
-              <td className="p-2 align-top text-left w-1/3">
+              <td className="p-2 text-left w-1/3" style={{ verticalAlign: 'top' }}>
                 {isStaticMode ? (
                   <div className="whitespace-pre-wrap" data-invoice-field="description">{item.description}</div>
                 ) : (
                   <textarea
-                    className="w-full focus:outline-none bg-transparent resize-none overflow-hidden placeholder-gray-400"
+                    className="w-full focus:outline-none bg-transparent resize-none overflow-hidden placeholder-gray-400 block"
+                    style={{ verticalAlign: 'top', marginTop: 0, paddingTop: 0, lineHeight: '1.4' }}
                     data-invoice-field="description"
-                    rows={item.description.split('\n').length || 1}
+                    rows={Math.max(item.description.split('\n').length, 1)}
                     value={item.description}
                     placeholder="Enter a description..."
                     onChange={(e) => handleItemChange(index, "description", e.target.value)}
+                    onInput={(e) => {
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = el.scrollHeight + 'px';
+                      }
+                    }}
                   />
                 )}
               </td>
-              <td className="p-2 align-top">
+              <td className="p-2" style={{ verticalAlign: 'top' }}>
                 {isStaticMode ? (
                   <span>{item.hsnSku}</span>
                 ) : (
@@ -467,7 +478,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   />
                 )}
               </td>
-              <td className="p-2 align-top w-20">
+              <td className="p-2 w-20" style={{ verticalAlign: 'top' }}>
                 {isStaticMode ? (
                   <span>{item.quantity}</span>
                 ) : (
@@ -479,7 +490,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   />
                 )}
               </td>
-              <td className="p-2 align-top w-24">
+              <td className="p-2 w-24" style={{ verticalAlign: 'top' }}>
                 {isStaticMode ? (
                   <span>{item.rate}</span>
                 ) : (
@@ -491,7 +502,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   />
                 )}
               </td>
-              <td className="p-2 align-top w-32">
+              <td className="p-2 w-32" style={{ verticalAlign: 'top' }}>
                 {isStaticMode ? (
                   <span>{item.gstPercentage}</span>
                 ) : (
@@ -503,7 +514,7 @@ const InvoiceTemplate1 = ({ isStaticMode }) => {
                   />
                 )}
               </td>
-              <td className="p-2 align-top relative font-bold w-32">
+              <td className="p-2 relative font-bold w-32" style={{ verticalAlign: 'top' }}>
                 {item.amount.toFixed(2)}
                 {!isStaticMode && (
                   <button

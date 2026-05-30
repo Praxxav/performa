@@ -115,12 +115,13 @@ const InvoiceGenerator = () => {
         const templateContainer = invoiceElement.firstElementChild;
         if (templateContainer) {
           Array.from(templateContainer.children).forEach(child => {
-            candidateElements.push(child);
             if (child.tagName === "TABLE") {
+              // Only add individual rows, not the table as a whole block
               child.querySelectorAll("tr").forEach(tr => {
                 candidateElements.push(tr);
               });
             } else {
+              candidateElements.push(child);
               child.querySelectorAll("tr, .grid, .flex").forEach(el => {
                 candidateElements.push(el);
               });
